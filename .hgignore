@@ -1,0 +1,7 @@
+syntax: glob
+*.pyc
+*~
+*-[1-9].ini
+*.bak
+*.orig
+_trial_temp
