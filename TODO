@@ -1,0 +1,155 @@
+
+TODO list for pysmpc.
+
+There are a number of small and large design changes listed below. In
+addition to those, the source code contains a number of comments
+marked with 'TODO' which document things on a more local level.
+
+* Enforce the use of Blum primes
+   The comparison only works with Blum primes, that is, primes that
+   are congruent to 3 modulo 4.
+
+* Create unit tests which randomizes network delay
+   The current unit test with LoopbackRuntime are strictly sequential
+   and does not capture the random delays possible with real network
+   traffic.
+
+* Benchmark Python vs. GMPY on different key sizes
+   Initial tests seems to indicate that the network is the
+   bottle-neck, but this should be systematically checked.
+
+* Benchmark parallel vs. sequential execution
+   Test multiplications that are forced to be done sequential:
+
+       *
+      / \
+     1   *
+        / \
+       2   *
+          / \
+         3   ...
+
+
+* Profile and optimize
+   We need to see if the time is spend on network latency or in the
+   CPU. If the latter is the case, then we could consider writing the
+   inner loop in C for more speed.
+
+* Remove program counters
+   An idea for this was suggested by Thomas Mølhave: label each share
+   with a tuple containing the labels of the shares that it depend on
+   in addition to the operation done. Consider:
+
+   a, b = rt.share(10)
+   c = rt.mul(a,b)
+
+   Here a and b get labels ('share', 1) and ('share', 2), and c get
+   the label ('mul', ('share', 1), ('share', 2)). If we continue with
+
+   d = rt.add(c,c)
+
+   the label for d would be
+
+   ('add', ('mul', ('share', 1), ('share', 2)),
+           ('mul', ('share', 1), ('share', 2)))
+
+   The labels grow exponentially in the length of dependencies! To
+   counter this, one could hash the labels.
+   
+   Consider this program:
+
+   x = rt.add(a,b)
+   y = rt.add(a,b)
+
+   Here x and y have the same label and are thus indistinguishable
+   when sent over the network. Since x and y have the exact same
+   history, and so represent the same value, this ought to cause no
+   trouble.
+   
+   A bigger problem with this approach seems to be the functions that
+   work with no input: the PRSS functions. They have no input to work
+   on, and so the output have no context to base its history on. They
+   cannot simply use a global counter since the calls might occur in
+   different order among different players -- we are back at the
+   original problem that was solved using the tuple program counters.
+
+* Have an option which will make things run more or less sequentially
+   For example: no parallelism would mean that all operations queue up
+   and wait on each other, semi-parallelism could mean that different
+   operations (mul and greater_than, say) queue up, and full
+   parallelism would run with no restrictions except those imposed by
+   the program itself.
+
+* Define and document a semantics for operations on deferred shares
+   Variables containing deferred shares should be immutable.
+   Operations like add and mul already obey this: add(x,y) does not
+   change x and y. The open method changes its argument.
+
+* Allow players to be started in any order
+   At the moment one must start players in descending order, 3-2-1,
+   but it would be nice if they could be started in any order. Player
+   1 would still try and connect to player 2 and 3, but if they cannot
+   be reached, then player 1 should retry a bit later.
+
+* More robust handling of port allocation
+   Players should check if the wanted port number is free, and if not,
+   then retry after a timeout. Ports can be occupied if a player is
+   killed, for then the ports normally end up in the TIME_WAIT state
+   for 60 seconds.
+
+* Rework port number magic
+   Instead of requiring each player to use the correct port number for
+   outgoing connections, we could let player 1 act as a coordinator.
+   This one player would be required to listen on a well-known port,
+   but the other players would not -- they simply listen to some port
+   chosen by the OS and announce that to player 1, which in turn let
+   the other players know.
+
+   When everybody has been informed of everybody elses presence, the
+   protocol execution can begin as normal with pair-wise connections
+   between the players. So the coordinator is only used in a setup
+   phase and wont become a bottleneck later.
+
+* Support preprocessing
+   With the use of deferreds, some amount of preprocessing is already
+   being done before the protocol begins proper. But this kind of
+   preprocessing does nothing for the double auction case where the
+   program branches during execution.
+
+   So a general mechanism is needed by which one can preprocess a
+   given number of multiplications, comparisons, etc.
+
+   A possible design could be one in which this is done dynamically:
+   when a protocol is executed, preprocessed stuff is taken from a
+   pool as needed. If the pool runs dry, then more stuff is generated
+   online. At the end of a run, the program will know how much stuff
+   was needed -- this information can then be dumped to a file.
+
+   A separate preprocessing script can read this information from the
+   file and produce another file with a pickled pool of preprocessed
+   stuff.
+
+* Use a logging module
+   Use a better technique for debug output than scattering print
+   statements around the source code.
+
+* Lazy Shamir resharing
+   After multiplying two shares, the result is a correct share of the
+   product, but a share from a polynomial of degree 2t. We therefore
+   normally reshare to get a polynomial of degree t.
+
+   But for doing addition these degree 2t shares are fine, so we could
+   wait with the resharing until it is surely needed.
+ 
+   Let [a]_t denote a share of a using a degree t polynomial and let
+   [a]_2t -> [a]_t denote a resharing going from degree 2t to t.
+
+   We could then calculate
+
+     sum([a_i]_t * [b_i]_t) = sum([a_i b_i]_2t)
+                            = [sum(a_i b_i)]_2t -> [sum(a_i b_i)]_t
+
+   using only one resharing at the end, saving network traffic. There
+   does not seem to be many places where we do stuff like that,
+   though. So the overhead of keeping track of when resharing is
+   needed might be too big for this to be an improvement.
