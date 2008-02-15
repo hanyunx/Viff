@@ -1,0 +1,25 @@
+syntax: glob
+*.pyc
+*~
+*-[1-9].{ini,cert,key}
+ca.{cert,key}
+*.bak
+*.orig
+_trial_temp
+profile.data
+*.prof
+*.{aux,dvi,log,nav,out,pdf,ps,snm,toc,vrb}
+doc/api/*.{html,gif,png}
+doc/api/api-objects.txt
+doc/api/epydoc.{css,js}
+dist
+MANIFEST
+
+# ignore eclipse project files
+.project
+
+# ignore eclipse pydev extension project files
+.pydevproject
+
+# ignore eclipse settings
+.settings
