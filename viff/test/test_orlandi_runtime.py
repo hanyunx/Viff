@@ -19,6 +19,9 @@ from twisted.internet.defer import gatherResults, DeferredList
 
 from viff.test.util import RuntimeTestCase, protocol
 from viff.runtime import gather_shares, Share
+from viff.paillierutil import NaClPaillier
+from viff.config import generate_configs
+
 try:
     from viff.orlandi import OrlandiRuntime, OrlandiShare
     import commitment
@@ -255,6 +258,9 @@ class OrlandiBasicCommandsTest(RuntimeTestCase):
         return d
 
 
+keys = None
+
+
 class OrlandiAdvancedCommandsTest(RuntimeTestCase):
     """Test for advanced commands."""
 
@@ -263,7 +269,14 @@ class OrlandiAdvancedCommandsTest(RuntimeTestCase):
 
     runtime_class = OrlandiRuntime
 
-    timeout = 60
+    timeout = 700
+
+    def generate_configs(self, *args):
+        global keys
+        if not keys:
+            keys = generate_configs(paillier=NaClPaillier(1024), *args)
+        return keys
+        
 
     @protocol
     def test_shift(self, runtime):
@@ -575,6 +588,44 @@ class OrlandiAdvancedCommandsTest(RuntimeTestCase):
         self.assertEquals(z2, None)
         return z2
 
+    @protocol
+    def test_leak_mul1(self, runtime):
+        """Test leaktolerant multiplication of two numbers."""
+        commitment.set_reference_string(long(2), long(6))
+
+        self.Zp = GF(6277101735386680763835789423176059013767194773182842284081)
+
+        x1 = 42
+        y1 = 7
+
+        runtime.s = 2
+        runtime.d = 2
+        runtime.s_lambda = 1
+
+        def check(v):
+            runtime.s = 1
+            runtime.d = 0
+            runtime.s_lambda = 1
+            self.assertEquals(v, x1 * y1)
+
+        x2 = runtime.shift([1], self.Zp, x1)
+        y2 = runtime.shift([2], self.Zp, y1)
+
+        sls = gatherResults(runtime.random_triple(self.Zp, 2*runtime.d + 1))
+
+        def cont(M):
+            M = [[Share(self, self.Zp, j) for j in i] for i in M]
+            z2 = runtime.leak_tolerant_mul(x2, y2, M)
+            d = runtime.open(z2)
+            d.addCallback(check)
+            return d
+        sls.addCallbacks(cont, runtime.error_handler)
+        return sls
+
+        z2 = runtime._cmul(y2, x2, self.Zp)
+        self.assertEquals(z2, None)
+        return z2
+
 class TripleGenTest(RuntimeTestCase):
     """Test for generation of triples."""
 
@@ -585,11 +636,21 @@ class TripleGenTest(RuntimeTestCase):
 
     timeout = 1600
 
+    def generate_configs(self, *args):
+        global keys
+        if not keys:
+            keys = generate_configs(paillier=NaClPaillier(1024), *args)
+        return keys
+
     @protocol
     def test_tripleGen(self, runtime):
         """Test the triple_gen command."""
 
         self.Zp = GF(6277101735386680763835789423176059013767194773182842284081)
+
+        runtime.s = 1
+        runtime.d = 0
+        runtime.s_lambda = 1
 
         def check((a, b, c)):
             self.assertEquals(c, a * b)

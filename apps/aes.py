@@ -122,12 +122,13 @@ def share_key(rt):
 def preprocess(rt):
     start = time.time()
     program_desc = {}
+    online_phase = 2
 
     if options.active:
         if options.exponentiation is False:
-            max = 461
-            js = [3 + i * 23 + j for i in range(20)
-                  for j in range(0, 14, 2) + [15]]
+            max = 621
+            js = [3 + i * 31 + j for i in range(20)
+                  for j in range(0, 21, 3) + [22]]
         elif options.exponentiation == 0 or options.exponentiation == 3:
             max = 821
             js = [1 + i * 41 + j * 3 for i in range(20) for j in range(13)]
@@ -139,7 +140,7 @@ def preprocess(rt):
             pcs = [(2, 1 + i, 2 + 3 * j)
                    for i in range(10 * options.count)
                    for j in range(140)] + \
-                  [(3, 18, k) + (121,) * i + (4 + 6 * j, 1 + 3 * l)
+                  [(3, 18, k) + (101,) * i + (3 + 5 * j, 1 + 3 * l)
                    for k in range(1, options.count + 1)
                    for i in range(10)
                    for j in range(20)
@@ -150,9 +151,10 @@ def preprocess(rt):
                    for i in range(10)
                    for j in js]
         program_desc[("generate_triples", (GF256,))] = pcs
+        online_phase = 3
 
     if options.exponentiation == 4:
-        pcs = [(3, 18, k) + (121,) * i + (1 + j * 6,)
+        pcs = [(online_phase, 18, k) + (101,) * i + (1 + j * 5,)
                for k in range(1, options.count + 1)
                for i in range(10)
                for j in range(20)]
