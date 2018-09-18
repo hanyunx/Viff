@@ -75,6 +75,7 @@ class ComparisonToft05Mixin:
            from the argument types (general field elements).
 
         """
+        print 'haha'
         field = getattr(share_a, "field", getattr(share_b, "field", None))
         if not isinstance(share_a, Share):
             share_a = Share(self, field, share_a)

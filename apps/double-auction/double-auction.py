@@ -44,7 +44,7 @@ from twisted.internet import reactor
 
 from viff import shamir
 from viff.field import GF
-from viff.runtime import Runtime, create_runtime
+from viff.runtime import Runtime, create_runtime, Share
 from viff.config import load_config
 from viff.util import find_prime
 
@@ -86,6 +86,7 @@ id, players = load_config(args[0])
 print "I am player %d" % id
 
 l = options.bit_length
+print "l: ", l
 t = (len(players) -1)//2
 n = len(players)
 
@@ -99,27 +100,36 @@ random.seed(0)
 # restricting them to only two digits use less space in the output.
 B = [random.randint(1, 2**l) for _ in range(options.count)]
 S = [random.randint(1, 2**l) for _ in range(options.count)]
+# print "B: ", B, "S: ", S
 
 # Make the bids monotone.
 B.sort(reverse=True)
 S.sort()
 
-seller_bids = [shamir.share(Zp(x), t, n)[id-1][1] for x in S]
-buyer_bids  = [shamir.share(Zp(x), t, n)[id-1][1] for x in B]
+# seller_bids = [Share(Zp(x), t, n)[id-1][1] for x in S]
+# print type(seller_bids[])
+# print "seller_bids length: ", len(seller_bids)
+# print "seller_bids[0]: ", seller_bids[0]
 
+# buyer_bids  = [Share(Zp(x), t, n)[id-1][1] for x in B]
+# print "buyer_bids length: ", len(buyer_bids)
 
 def auction(rt):
+    seller_bids = [Share(rt, Zp(x), t, n)[id-1][1] for x in S]
+    buyer_bids  = [Share(rt, Zp(x), t, n)[id-1][1] for x in B]
+
 
     def debug(low, mid, high):
+        print "hi"
         string = ["  " for _ in range(high+1)]
         string[low] = " |"
         string[mid] = " ^"
         string[high] = " |"
 
-        print "B: " + " ".join(["%2d" % b for b in B])
-        print "S: " + " ".join(["%2d" % s for s in S])
-        print "   " + " ".join(["%2d" % x for x in range(len(B)+1)])
-        print "   " + " ".join(string)
+        # print "B: " + " ".join(["%2d" % b for b in B])
+        # print "S: " + " ".join(["%2d" % s for s in S])
+        # print "   " + " ".join(["%2d" % x for x in range(len(B)+1)])
+        # print "   " + " ".join(string)
 
     def branch(result, low, mid, high):
         print "low: %d, high: %d, last result: %s" % (low, high, result)
@@ -131,19 +141,33 @@ def auction(rt):
             high = mid
 
         if low+1 < high:
+            print " ENTER LINE 134..."
             mid = (low + high)//2
+            print "mid: ", mid
             if options.verbose:
                 debug(low, mid, high)
+            print "resul = , before open"
+            # print buyer_bids[mid]
+            # print rt.open(buyer_bids[mid])
+            # print "open: ", buyer_bids[mid]
+            # print seller_bids[mid]
+            print "comp: ", buyer_bids[mid] >= seller_bids[mid]
+            # print type(Share(rt, buyer_bids[mid]))
             result = rt.open(buyer_bids[mid] >= seller_bids[mid])
+            print "result = ", result
             result.addCallback(output, "%s >= %s: %%s" % (B[mid], S[mid]))
             result.addCallback(branch, low, mid, high)
+            print "." * 10, " branch end ", "." * 10
             return result
         else:
+            print " ENTER LINE 145..."
             if options.verbose:
                 debug(low, mid, high)
+            print "." * 10, " branch end ", "." * 10
             return low
 
     def check_result(result):
+        print "." * 10, "enter check_result", "." * 10
         expected = max([i for i, (b, s) in enumerate(zip(B, S)) if b > s])
         if result == expected:
             print "Result: %d (correct)" % result
@@ -155,6 +179,7 @@ def auction(rt):
     result.addCallback(lambda _: reactor.stop())
 
 pre_runtime = create_runtime(id, players, t, options)
+print "." * 10, "on the way", "." * 10
 pre_runtime.addCallback(auction)
 
 reactor.run()

@@ -1,0 +1,14 @@
+auction_id = foo1
+client_id = bar2
+client_type = buyer
+[bids]
+0 = 98
+1 = 88
+2 = 65
+3 = 65
+4 = 55
+5 = 45
+6 = 35
+7 = 34
+8 = 26
+9 = 10

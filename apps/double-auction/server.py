@@ -55,6 +55,8 @@ class ReceiveBid(LineReceiver):
 fac = Factory()
 fac.protocol = ReceiveBid
 
-
+print "before listenTCP ..."
 reactor.listenTCP(6789, fac)
+print "after listenTCP ..."
+
 reactor.run()

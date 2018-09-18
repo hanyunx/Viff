@@ -150,6 +150,7 @@ class Share(Deferred):
     def __ge__(self, other):
         """Greater-than or equal comparison."""
         # self >= other
+        print "hahahahahahah"
         return self.runtime.greater_than_equal(self, other)
 
     def __eq__(self, other):

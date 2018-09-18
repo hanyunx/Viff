@@ -549,6 +549,7 @@ def GF(modulus):
 
         def __eq__(self, other):
             """Equality test."""
+            print "__eq__"
             try:
                 assert self.field is other.field, "Fields must be identical"
                 return self.value == other.value
