@@ -68,15 +68,12 @@ class PassiveRuntime(Runtime):
         Communication cost: every player sends one share to each
         receiving player.
         """
-        print "Is instance? ", isinstance(share, Share)
         assert isinstance(share, Share)
         # all players receive result by default
         if receivers is None:
             receivers = self.players.keys()
         if threshold is None:
             threshold = self.threshold
-
-        print "... threshold ...", threshold
 
         def filter_good_shares(results):
             # Filter results, which is a list of (success, share)
@@ -109,18 +106,13 @@ class PassiveRuntime(Runtime):
                     deferreds.append(d)
                 return recombine(deferreds)
 
-        print "... threshold ..."
-
         result = share.clone()
-        print "... in open ..."
         self.schedule_callback(result, exchange)
 
         # do actual communication
         self.activate_reactor()
 
-        print "almost"
         if self.id in receivers:
-            print "done"
             return result
 
     @profile
