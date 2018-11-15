@@ -52,7 +52,7 @@ class DeterministicEqualityMixin:
             if cj == 1:
                 xj = rj
             elif cj == 0:
-                xj = 1 - rj
+                xj = Zp(1) - rj
             else:
                 # Start over.
                 xj = gen_test_bit()

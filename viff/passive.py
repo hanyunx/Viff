@@ -128,7 +128,7 @@ class PassiveRuntime(Runtime):
             result = share_a.clone()
             result.addCallback(lambda a, b: b + a, share_b)
             return result
-        
+
         result = gather_shares([share_a, share_b])
         result.addCallback(lambda (a, b): a + b)
         return result

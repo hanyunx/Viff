@@ -20,6 +20,7 @@
 is mixed with.
 """
 
+
 class ProbabilisticEqualityMixin:
     """This class implements probabilistic constant-round secure
     equality-testing of secret shared numbers."""
@@ -46,7 +47,7 @@ class ProbabilisticEqualityMixin:
 
         Zp = share_x.field
 
-        a = share_x - share_y # We will check if a == 0
+        a = share_x - share_y   # We will check if a == 0
         k = self.options.security_parameter
 
         def gen_test_bit():
@@ -55,10 +56,16 @@ class ProbabilisticEqualityMixin:
             r = self.prss_share_random(Zp)
             rp = self.prss_share_random(Zp)
 
+            print "*********** b: ", b, "***************"
+            print "*********** r: ", r, "***************"
+            print "*********** rp: ", rp, "***************"
+
             # If b_i == 1 c_i will always be a square modulo p if a is
             # zero and with probability 1/2 otherwise (except if rp == 0).
             # If b_i == -1 it will be non-square.
             c = self.open(a * r + b * rp * rp)
+            # print "type(c): ", type(c)
+
             return self.schedule_callback(c, finish, b)
 
         def finish(cj, bj):
@@ -74,12 +81,34 @@ class ProbabilisticEqualityMixin:
 
         x = [gen_test_bit() for _ in range(k)]
 
+        # print("x before: ")
+        # for i in x:
+        #     print(i)
+
+        # print("type x: ", type(x), x)
+        # print("type x[0]: ", type(x[0]), x[0])
+        # print("=="*10)
+
         # Take the product (this is here the same as the "and") of all
         # the x'es
         while len(x) > 1:
-            x.append(x.pop(0) * x.pop(0))
+            a = x.pop(0)
+            b = x.pop(0)
+            c = a * b
+            print "\na: ", a
+            print "b: ", b
+            print "c: ", c
+            x.append(c)
+
+        # fb = self.open(x[0])
+        # print("type x: ", type(x), x)
+        print("type x[0]: ", type(x[0]), x[0])
+        # print("type open(x): ", type(fb))
+
+        # print("x after: ", fb)
 
         return x[0]
+
 
 def legendre_mod_p(a):
     """Return the legendre symbol ``legendre(a, p)`` where *p* is the
