@@ -61,11 +61,16 @@ class Protocol:
         # Do the secret computation
         result = (x == y)
 
+        print "hahahhaha: ", result
+
         # Now open the result so that we can see it
         result = runtime.open(result)
 
+        print "after haha: ", result
+
+
         def finish(eq):
-            print
+            print "happy: ", eq
             if eq:
                 print "The two numbers where equal!"
             else:
