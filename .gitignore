@@ -28,6 +28,9 @@ profile.data
 *.prof
 *.pstats
 
+# initial file
+*.ini
+
 # LaTeX outputs.
 # *.{aux,dvi,log,nav,out,pdf,ps,snm,toc,vrb}
 
